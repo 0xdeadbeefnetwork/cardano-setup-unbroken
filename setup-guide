@@ -1,0 +1,201 @@
+sudo aptapt-get update -y
+sudo aptapt-get install build-essential pkg-config libffi-dev libgmp-dev libssl-dev libtinfo-dev libsystemd-dev zlib1g-dev make g++ tmux git jq wget libncursesw5 libtool autoconf -y
+wget https://downloads.haskell.org/~cabal/cabal-install-latest/cabal-install-3.6.2.0-x86_64-linux-deb10.tar.xz
+
+tar -xf cabal-install-3.6.2.0-x86_64-linux-deb10.tar.xz
+
+mkdir -p ~/.local/bin
+
+mv cabal ~/.local/bin/
+
+export PATH="~/.local/bin:$PATH"
+
+
+
+
+# add that last command to your user's .bashrc file:
+
+nano ~/.bashrc 
+
+
+# paste the below code to the end of your .bashrc file
+
+export PATH="~/.local/bin:$PATH"
+export PATH="~/.cabal/bin:$PATH"
+export CARDANO_NODE_SOCKET_PATH=~/cardano-node/db/node.socket
+export NODE_HOME=$HOME/cardano-node
+
+
+
+
+# save your bashrc file with this command
+
+source ~/.bashrc
+
+
+
+
+
+# update cabal
+
+cabal update
+
+# edit config 
+
+nano ~/.cabal/config
+
+# add this line and save.
+
+overwrite-policy: always
+
+
+
+# GCH 
+
+https://downloads.haskell.org/~ghc/latest/ghc-9.0.1-x86_64-deb10-linux.tar.xz
+tar -xf ghc-9.0.1-x86_64-deb10-linux.tar.xz
+cd ghc-9.0.1
+./configure
+sudo make install
+cd ..
+
+
+# Libsodium
+
+git checkout 1.0.16-583-gb397839b
+./autogen.sh
+./configure
+make
+sudo make install
+
+# Editing bashrc
+
+
+nano ~/.bashrc 
+
+# add the following lines
+
+export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+#save and update current used bashrc
+
+source ~/.bashrc
+cd ..
+
+# Cardano Node Latest
+
+git clone https://github.com/input-output-hk/cardano-node.git
+cd cardano-node
+git fetch --all --tags
+git tag
+git checkout tags/1.30.1
+cabal build all
+cd ..
+
+# remove the db folder of older installation.
+
+rm -rf ~/cardano-node/db
+
+mkdir ~/config
+cd ~/config
+
+# Fetch all JSON files
+
+
+
+wget https://hydra.iohk.io/job/Cardano/cardano-node/cardano-deployment/latest-finished/download/1/mainnet-config.json
+wget https://hydra.iohk.io/job/Cardano/cardano-node/cardano-deployment/latest-finished/download/1/mainnet-shelley-genesis.json
+wget https://hydra.iohk.io/job/Cardano/cardano-node/cardano-deployment/latest-finished/download/1/mainnet-byron-genesis.json
+wget https://hydra.iohk.io/job/Cardano/cardano-node/cardano-deployment/latest-finished/download/1/mainnet-topology.json
+wget https://hydra.iohk.io/job/Cardano/cardano-node/cardano-deployment/latest-finished/download/1/mainnet-alonzo-genesis.json
+
+# All JSON configs can be found here:
+
+https://hydra.iohk.io/build/7654130/download/1/index.html
+
+# Save a bashscript for later use for starting the syncinng process - grabbing a copy of the blockchain 
+
+save this code in a file called run.sh, this will bind the cardano node to all network interfaces! firewalls and security are not covered in this guide because i didn't have all fucking day. Please DYOR.
+
+```bash
+#!/bin/sh
+
+export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+
+/home/<USER>/.local/bin/cardano-node run \
+   --topology ~/config/mainnet-topology.json \
+   --database-path ~/cardano-node/db \
+   --socket-path ~/cardano-node/db/node.socket \
+   --host-addr 0.0.0.0 \
+   --port 3001 \
+   --config ~/config/mainnet-config.json
+```
+
+
+
+# save and run:
+screen -r ./run.sh
+
+# You can now now throw screen into the background and wait for the blockchain to sync -- hope we don't crash!
+
+# If you get a DbMarkerError, stop any processes and remove the db folder contents:
+
+rm -rf ~/cardano-node/db/*
+
+cardano-cli alonzo query tip --mainnet
+
+
+
+# Configure the node to view the nice UI (which I don't find very helpful, but most people seem to like. I prefer ugly log messages):
+
+nano ~/config/mainnet-config.json
+
+# set these
+  "TraceBlockFetchDecisions": true,
+  "ViewMode": "LiveView"
+
+
+# Enable node as a service
+
+sudo nano /etc/systemd/system/cardano.service
+
+[Unit]
+Description=Cardano node
+StartLimitIntervalSec=0
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=10
+User=<USER>
+WorkingDirectory=/home/<USER>
+ExecStart=/bin/sh run.sh
+SuccessExitStatus=143
+StandardOutput=syslog+console
+StandardError=syslog+console
+
+[Install]
+WantedBy=multi-user.target
+
+
+# save and execute
+sudo systemctl daemon-reload
+sudo systemctl enable cardano.service
+sudo systemctl start cardano
+sudo systemctl status cardano
+
+# check the service status 
+sudo journalctl -u cardano
+sudo journalctl -xe
+
+
+
+-----
+
+Several firewall and security steps are not included here; DYOR.
+
+Please consider an ADA donation:
+
+addr1v9qdrpg9n32kq8dk7s9873xv7qvqvtjdn2lsgayh2hphhmgtvlfr6
