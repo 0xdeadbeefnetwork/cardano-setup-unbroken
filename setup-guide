@@ -57,8 +57,9 @@ cd ..
 
 # Libsodium
 git clone https://github.com/input-output-hk/libsodium.git
+cd libsodium
+git checkout 675149b
 
-git checkout b397839
 ./autogen.sh
 ./configure
 make
