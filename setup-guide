@@ -56,6 +56,7 @@ cd ..
 
 
 # Libsodium
+git clone https://github.com/input-output-hk/libsodium.git
 
 git checkout 1.0.16-583-gb397839b
 ./autogen.sh
