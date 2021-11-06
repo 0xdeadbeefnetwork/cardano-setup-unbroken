@@ -10,31 +10,26 @@ mv cabal ~/.local/bin/
 
 export PATH="~/.local/bin:$PATH"
 
-
-
-
 # add that last command to your user's .bashrc file:
-
 nano ~/.bashrc 
 
-
-# paste the below code to the end of your .bashrc file
-
+# paste that to the end of that file
 export PATH="~/.local/bin:$PATH"
 export PATH="~/.cabal/bin:$PATH"
 export CARDANO_NODE_SOCKET_PATH=~/cardano-node/db/node.socket
 export NODE_HOME=$HOME/cardano-node
 
-
-
-
-# save your bashrc file with this command
-
+# save and run
 source ~/.bashrc
 
+#do the same thing again for ~/.profile:
+nano ~/.profile 
+export PATH=~/.local/bin:$PATH
+export PATH=~/.cabal/bin:$PATH
+export CARDANO_NODE_SOCKET_PATH=~/cardano-node/db/node.socket
 
-
-
+# save and run
+source ~/.profile
 
 # update cabal
 
